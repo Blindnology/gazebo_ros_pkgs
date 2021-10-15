@@ -98,6 +98,22 @@ void GazeboRosLaser::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
   else
     this->topic_name_ = this->sdf->Get<std::string>("topicName");
 
+  if (!this->sdf->HasElement("intensityMin"))
+  {
+    ROS_INFO_NAMED("laser", "Laser plugin missing <intensityMin>, defaults to -Inf");
+    this->intensity_min_ = -INFINITY;
+  }
+  else
+    this->intensity_min_ = this->sdf->Get<float>("intensityMin");
+
+  if (!this->sdf->HasElement("intensityMax"))
+  {
+    ROS_INFO_NAMED("laser", "Laser plugin missing <intensityMax>, defaults to Inf");
+    this->intensity_max_ = INFINITY;
+  }
+  else
+    this->intensity_max_ = this->sdf->Get<float>("intensityMax");
+
   this->laser_connect_count_ = 0;
 
     // Make sure the ROS node for Gazebo has already been initialized
@@ -199,6 +215,14 @@ void GazeboRosLaser::OnScan(ConstLaserScanStampedPtr &_msg)
   std::copy(_msg->scan().intensities().begin(),
             _msg->scan().intensities().end(),
             laser_msg.intensities.begin());
+  // Filter by intensity if needed
+  if (this->intensity_min_ != -INFINITY || this->intensity_max_ != INFINITY) {
+    for (size_t i = 0; i < laser_msg.ranges.size(); ++i) {
+      if (laser_msg.intensities[i] < this->intensity_min_ ||
+          laser_msg.intensities[i] > this->intensity_max_)
+        laser_msg.ranges[i] = INFINITY;
+    }
+  }
   this->pub_queue_->push(laser_msg, this->pub_);
 }
 }

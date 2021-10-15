@@ -77,6 +77,9 @@ namespace gazebo
     /// \brief frame transform name, should match link name
     private: std::string frame_name_;
 
+    /// \brief Thresholds to filter scan points out
+    private: float intensity_min_, intensity_max_;
+
     /// \brief tf prefix
     private: std::string tf_prefix_;
 
